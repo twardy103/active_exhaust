@@ -12,7 +12,6 @@ Features:
 #include "sd_card.h"
 
 void printChipInfo() {
-    /* Print chip information */
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
     printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
