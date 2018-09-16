@@ -8,6 +8,4 @@
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
 
-static const char *TAG = "example";
-
 void sd_card_handler();

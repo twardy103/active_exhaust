@@ -1,5 +1,7 @@
 #include "sd_card.h"
 
+static const char *TAG = "example";
+
 void sd_card_handler() {
 	// This example can use SDMMC and SPI peripherals to communicate with SD card.
 	// By default, SDMMC peripheral is used.
