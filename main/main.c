@@ -45,7 +45,7 @@ void app_main()
 	printChipInfo();
 
     printf("############################	  LED blinker           #################################\n");
-    xTaskCreate(&ledBlinker, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+   // xTaskCreate(&ledBlinker, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 
     printf("############################	  SD card handler       #################################\n");
     sd_card_handler();
