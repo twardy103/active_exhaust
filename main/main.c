@@ -10,6 +10,7 @@ Features:
 #include "esp_spi_flash.h"
 
 #include "sd_card.h"
+#include "dac.h"
 
 void printChipInfo() {
     /* Print chip information */
@@ -39,7 +40,7 @@ void ledBlinker(void *pvParameter) {
 	}
 }
 
-void app_main()
+esp_err_t app_main()
 {
 	printf("############################	  Active exhaust v1.0   #################################\n");
 	printChipInfo();
@@ -49,4 +50,11 @@ void app_main()
 
     printf("############################	  SD card handler       #################################\n");
     sd_card_handler();
+
+    printf("############################	  DAC  handler          #################################\n");
+    //dac_init();
+    example_i2s_init();
+    xTaskCreate(play_wav, "play_wav", 1024 * 2, NULL, 5, NULL);
+    //xTaskCreate(adc_read_task, "ADC read task", 2048, NULL, 5, NULL);
+    return ESP_OK;
 }
