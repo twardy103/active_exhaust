@@ -6,7 +6,7 @@ static const char *TAG = "SD_CARD";
 #define PIN_NUM_CLK  14
 #define PIN_NUM_CS   13
 
-void sd_card_handler() {
+void sd_card_init() {
 	ESP_LOGI(TAG, "Initializing SD card");
 	ESP_LOGI(TAG, "Using SPI peripheral");
 
@@ -39,34 +39,22 @@ void sd_card_handler() {
 	}
 
 	sdmmc_card_print_info(stdout, card);
+}
 
-	ESP_LOGI(TAG, "Opening file");
-	FILE* f = fopen("/sdcard/hello.txt", "w");
-	if (f == NULL) {
-		ESP_LOGE(TAG, "Failed to open file for writing");
-		return;
+esp_err_t sd_card_deinit() {
+	esp_err_t result = esp_vfs_fat_sdmmc_unmount();
+	if (result != ESP_OK) {
+		ESP_LOGE(TAG, "Failed to unmount filesystem.");
 	}
-	fprintf(f, "Hello %s!\n", card->cid.name);
-	fclose(f);
-	ESP_LOGI(TAG, "File written");
-
-	// Check if destination file exists before renaming
-	struct stat st;
-	if (stat("/sdcard/foo.txt", &st) == 0) {
-		// Delete it if it exists
-		unlink("/sdcard/foo.txt");
+	else {
+		ESP_LOGI(TAG, "Card unmounted");
 	}
+	return result;
+}
 
-	// Rename original file
-	ESP_LOGI(TAG, "Renaming file");
-	if (rename("/sdcard/hello.txt", "/sdcard/foo.txt") != 0) {
-		ESP_LOGE(TAG, "Rename failed");
-		return;
-	}
-
-	// Open renamed file for reading
-	ESP_LOGI(TAG, "Reading file");
-	f = fopen("/sdcard/foo.txt", "r");
+void read_from_sd(char* file) {
+	ESP_LOGI(TAG, "Reading file: %s", file);
+	FILE* f = fopen(file, "r");
 	if (f == NULL) {
 		ESP_LOGE(TAG, "Failed to open file for reading");
 		return;
@@ -80,7 +68,30 @@ void sd_card_handler() {
 		*pos = '\0';
 	}
 	ESP_LOGI(TAG, "Read from file: '%s'", line);
-
-	//esp_vfs_fat_sdmmc_unmount();
-	//ESP_LOGI(TAG, "Card unmounted");
 }
+
+void write_to_sd(char* file) {
+	ESP_LOGI(TAG, "Opening file: %s", file);
+	FILE* f = fopen(file, "w");
+	if (f == NULL) {
+		ESP_LOGE(TAG, "Failed to open file for writing");
+		return;
+	}
+	fprintf(f, "Pierwsza linia\n");
+	fclose(f);
+	ESP_LOGI(TAG, "File written");
+}
+
+//// Check if destination file exists before renaming
+//struct stat st;
+//if (stat("/sdcard/foo.txt", &st) == 0) {
+//	// Delete it if it exists
+//	unlink("/sdcard/foo.txt");
+//}
+//
+//// Rename original file
+//ESP_LOGI(TAG, "Renaming file");
+//if (rename("/sdcard/hello.txt", "/sdcard/foo.txt") != 0) {
+//	ESP_LOGE(TAG, "Rename failed");
+//	return;
+//}

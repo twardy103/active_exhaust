@@ -8,5 +8,8 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
+#include <string.h>
 
-void sd_card_handler();
+void sd_card_init();
+void read_from_sd(char* file);
+void write_to_sd(char* file);

@@ -1,7 +1,7 @@
 /* Active Exhaust project v1.0
 Features:
- - SD card handling
- - ...
+ - SD card handling (reading, writing)
+ - DAC handling (file from SD card pushed on DAC using I2S
 */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -13,48 +13,65 @@ Features:
 #include "dac.h"
 
 void printChipInfo() {
-    /* Print chip information */
-    esp_chip_info_t chip_info;
-    esp_chip_info(&chip_info);
-    printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
-            chip_info.cores,
-            (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-            (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
+	/* Print chip information */
+	esp_chip_info_t chip_info;
+	esp_chip_info(&chip_info);
+	printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ", chip_info.cores,
+			(chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
+			(chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
-    printf("silicon revision %d, ", chip_info.revision);
+	printf("silicon revision %d, ", chip_info.revision);
 
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
-            (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+	printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+			(chip_info.features & CHIP_FEATURE_EMB_FLASH) ?
+					"embedded" : "external");
 }
 
-void ledBlinker(void *pvParameter) {
-    printf("[%s]\n", __FUNCTION__);
+void led_blinker(void *pvParameter) {
+	printf("[%s]\n", __FUNCTION__);
 	gpio_pad_select_gpio(GPIO_NUM_23);
 	esp_err_t result = gpio_set_direction(GPIO_NUM_23, GPIO_MODE_OUTPUT);
-    printf("Result: [%d]\n", result);
+	printf("Result: [%d]\n", result);
 	while (1) {
 		gpio_set_level(GPIO_NUM_23, 0);
-		vTaskDelay(1000/portTICK_PERIOD_MS);
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
 		gpio_set_level(GPIO_NUM_23, 1);
-		vTaskDelay(1000/portTICK_PERIOD_MS);
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}
+	vTaskDelete(NULL);
 }
 
-esp_err_t app_main()
-{
+void switch_handler(void *pvParameter) {
+	printf("[%s]\n", __FUNCTION__);
+	gpio_pad_select_gpio(GPIO_NUM_4);
+	esp_err_t result = gpio_set_direction(GPIO_NUM_4, GPIO_MODE_INPUT);
+	printf("Result: [%d]\n", result);
+
+	result = gpio_intr_enable(GPIO_NUM_4);
+	vTaskDelete(NULL);
+}
+
+esp_err_t app_main() {
 	printf("############################	  Active exhaust v1.0   #################################\n");
 	printChipInfo();
 
-    printf("############################	  LED blinker           #################################\n");
-   // xTaskCreate(&ledBlinker, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+	printf("############################	  LED blinker           #################################\n");
+	xTaskCreate(led_blinker, "ledBlinker", 1024 * 2/*configMINIMAL_STACK_SIZE*/,
+			NULL, 5, NULL);
 
-    printf("############################	  SD card handler       #################################\n");
-    sd_card_handler();
+	printf("############################	  SWITCH handler        #################################\n");
+	//xTaskCreate(switch_handler, "switch_handler", 1024 * 2/*configMINIMAL_STACK_SIZE*/,
+	//		NULL, 5, NULL);
 
-    printf("############################	  DAC  handler          #################################\n");
-    //dac_init();
-    example_i2s_init();
-    xTaskCreate(play_wav, "play_wav", 1024 * 2, NULL, 5, NULL);
-    //xTaskCreate(adc_read_task, "ADC read task", 2048, NULL, 5, NULL);
-    return ESP_OK;
+	printf("############################	  SD card handler       #################################\n");
+	sd_card_init();
+	char *file = "/sdcard/test.txt";
+	write_to_sd(file);
+	read_from_sd(file);
+
+	printf("############################	  DAC  handler          #################################\n");
+	i2s_init();
+	xTaskCreate(play_wav, "play_wav", 1024 * 2, NULL, 5, NULL);
+	//xTaskCreate(adc_read_task, "ADC read task", 2048, NULL, 5, NULL);
+	return ESP_OK;
 }

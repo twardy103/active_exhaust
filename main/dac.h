@@ -27,17 +27,17 @@
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_7)
 #define V_REF   				  1100
 #if( configUSE_16_BIT_TICKS == 1 )
-	typedef uint16_t TickType_t;
-	#define portMAX_DELAY ( TickType_t ) 0xffff
+typedef uint16_t TickType_t;
+#define portMAX_DELAY ( TickType_t ) 0xffff
 #else
-	typedef uint32_t TickType_t;
-	#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
+typedef uint32_t TickType_t;
+#define portMAX_DELAY ( TickType_t ) 0xffffffffUL
 #endif
 
 void dac_init();
-void example_i2s_init();
-int example_i2s_dac_data_scale(uint8_t* d_buff, uint8_t* s_buff, uint32_t len);
-void example_set_file_play_mode();
-void example_reset_play_mode();
-void example_disp_buf(uint8_t* buf, int length);
+void i2s_init();
+int i2s_dac_data_scale(uint8_t* d_buff, uint8_t* s_buff, uint32_t len);
+void set_file_play_mode();
+void reset_play_mode();
+void disp_buf(uint8_t* buf, int length);
 void play_wav();
