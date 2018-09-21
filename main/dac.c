@@ -2,18 +2,6 @@
 #include "stdio.h"
 #include "audio_file.h"
 
-void dac_init() {
-//    printf("DAC init on channel [%d], ", DAC_CHANNEL_1);
-//	//i2s_adc_enable(EXAMPLE_I2S_NUM);
-//	dac_output_enable(DAC_CHANNEL_1);
-//	gets(audio_table);
-//	for(int i = 0 ; audio_table[i] != '\0' ; i++) {
-//	    printf("Znak: [%d]", audio_table[i]);
-//	    dac_output_voltage(DAC_CHANNEL_1, audio_table[i]);
-//
-//	}
-}
-
 /**
  * @brief I2S ADC/DAC mode init.
  */

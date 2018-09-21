@@ -1,16 +1,30 @@
 /* Active Exhaust project v1.0
 Features:
  - SD card handling (reading, writing)
- - DAC handling (file from SD card pushed on DAC using I2S
+ - DAC handling (file from SD card pushed on DAC using I2S)
+ - Switch interruption
 */
 #include <stdio.h>
+#include <string.h>
+#include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 
 #include "sd_card.h"
 #include "dac.h"
+
+SemaphoreHandle_t xSemaphore = NULL;
+bool led_status = false;
+
+// interrupt service routine, called when the button is pressed
+void IRAM_ATTR button_isr_handler(void* arg) {
+
+	// notify the button task
+	xSemaphoreGiveFromISR(xSemaphore, NULL);
+}
 
 void printChipInfo() {
 	/* Print chip information */
@@ -41,14 +55,42 @@ void led_blinker(void *pvParameter) {
 	vTaskDelete(NULL);
 }
 
-void switch_handler(void *pvParameter) {
+// task that will react to button clicks
+void button_task(void* arg) {
+	// infinite loop
+	while (1) {
+		// wait for the notification from the ISR
+		if (xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE) {
+			printf("Button pressed! Led status: [%d]\n", led_status);
+			led_status = !led_status;
+			gpio_set_level(GPIO_NUM_5, led_status);
+		}
+	}
+	vTaskDelete(NULL);
+}
+
+void init_gpio_for_switch() {
 	printf("[%s]\n", __FUNCTION__);
+	// create the binary semaphore
+	xSemaphore = xSemaphoreCreateBinary();
+
 	gpio_pad_select_gpio(GPIO_NUM_4);
 	esp_err_t result = gpio_set_direction(GPIO_NUM_4, GPIO_MODE_INPUT);
 	printf("Result: [%d]\n", result);
 
-	result = gpio_intr_enable(GPIO_NUM_4);
-	vTaskDelete(NULL);
+	gpio_set_intr_type(GPIO_NUM_4, GPIO_PIN_INTR_NEGEDGE);
+
+	// install ISR service with default configuration
+	gpio_install_isr_service(0);
+
+	// attach the interrupt service routine
+	gpio_isr_handler_add(GPIO_NUM_4, button_isr_handler, NULL);
+}
+
+void init_gpio_for_led() {
+	//Configure GPIO for LED (for switch interruption)
+	gpio_pad_select_gpio(GPIO_NUM_5);
+	gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);
 }
 
 esp_err_t app_main() {
@@ -56,12 +98,12 @@ esp_err_t app_main() {
 	printChipInfo();
 
 	printf("############################	  LED blinker           #################################\n");
-	xTaskCreate(led_blinker, "ledBlinker", 1024 * 2/*configMINIMAL_STACK_SIZE*/,
-			NULL, 5, NULL);
+	xTaskCreate(led_blinker, "ledBlinker", 1024 * 2, NULL, 5, NULL);
 
 	printf("############################	  SWITCH handler        #################################\n");
-	//xTaskCreate(switch_handler, "switch_handler", 1024 * 2/*configMINIMAL_STACK_SIZE*/,
-	//		NULL, 5, NULL);
+	init_gpio_for_switch();
+	init_gpio_for_led();
+	xTaskCreate(button_task, "button_task", 1024 * 2, NULL, 5, NULL);
 
 	printf("############################	  SD card handler       #################################\n");
 	sd_card_init();
@@ -72,6 +114,5 @@ esp_err_t app_main() {
 	printf("############################	  DAC  handler          #################################\n");
 	i2s_init();
 	xTaskCreate(play_wav, "play_wav", 1024 * 2, NULL, 5, NULL);
-	//xTaskCreate(adc_read_task, "ADC read task", 2048, NULL, 5, NULL);
 	return ESP_OK;
 }
