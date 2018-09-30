@@ -1,3 +1,6 @@
+#ifndef __DAC_H__
+#define __DAC_H__
+
 #include "driver/dac.h"
 
 #include <stdio.h>
@@ -41,3 +44,5 @@ void set_file_play_mode();
 void reset_play_mode();
 void disp_buf(uint8_t* buf, int length);
 void play_wav();
+
+#endif /* __DAC_H__ */

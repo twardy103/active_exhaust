@@ -1,3 +1,6 @@
+#ifndef __SD_CARD_H__
+#define __SD_CARD_H__
+
 #include <string.h>
 #include <sys/unistd.h>
 #include <ctype.h>
@@ -13,3 +16,5 @@
 void sd_card_init();
 void read_from_sd(char* file);
 void write_to_sd(char* file);
+
+#endif /* __SD_CARD_H__ */
